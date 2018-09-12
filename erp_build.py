@@ -7,44 +7,46 @@ import shutil
 import logging
 
 from pprint import pprint
-from settings import COPY_FILE, SYS_NAME, FILE_PATH
+from settings import COPY_FILE, SYS_NAME, FILE_PATH, COMMAND, COPY_FILE_PATH, LONG_PATH, SHOT_PATH, SP_SYS_NAME
 
-COMMAND = {
-    'rebuild': r'MSBuild.exe {0}\{1}\{1}.sln /t:rebuild /property:Configuration=Release',
-    'rebuild_long': r'MSBuild.exe {0}\{1}\{1}\{1}.sln /t:rebuild /property:Configuration=Release'
-}
-COPY_FILE_PATH = {
-    'filename_path': r'{0}\{1}\{1}\bin\Release\{2}',
-    'filename_path_long': r'{0}\{1}\{1}\{1}\bin\Release\{2}',
-}
-
-LONG_PATH = ['ThunderBusinesses', 'ThunderDaemon']
 
 class RebuildClass(object):
 
     def __init__(self):
         self.current_path = FILE_PATH['current_path']
         self.des_path = FILE_PATH['des_path']
-
-        if not os.path.exists(self.des_path):
-            os.makedirs(self.des_path) 
         
         list_rebuild_paths = os.listdir(self.current_path)
         list_rebuild_paths = [list_rebuild_path for list_rebuild_path in list_rebuild_paths \
         if os.path.isdir(self.current_path + '\\' + list_rebuild_path)]
         self.list_path = list_rebuild_paths
 
+    def get_path(self, fun_name):
+        copy_path = 'file_name_path' if fun_name not in LONG_PATH else 'file_name_path_long'
+        rebuid_path = 'rebuild' if fun_name not in LONG_PATH else 'rebuild_long'
+        return rebuid_path, copy_path
+
     def copy_file(self, fun_name):
 
+        # 判断路径是否存在
+        if not os.path.exists(self.des_path):
+            os.makedirs(self.des_path)
+        if fun_name == 'ThunderSupermarket' and not os.path.exists(self.des_path):
+            os.makedirs(self.des_path + r'\zh-CN')
+
         list_file = COPY_FILE[fun_name]
-        path = 'filename_path' if fun_name not in LONG_PATH else 'filename_path_long'
+        _, path = self.get_path(fun_name)
+ 
         for i in list_file:
-            file_path = COPY_FILE_PATH[path].format(self.current_path, fun_name, i)
+            if fun_name in SP_SYS_NAME:
+                file_path = COPY_FILE_PATH[path].format(self.current_path, fun_name, SP_SYS_NAME[fun_name], i)
+            else:
+                file_path = COPY_FILE_PATH[path].format(self.current_path, fun_name, fun_name, i)
             ocx_path_file = self.current_path + '\\OCX\\' + i
             des_path_file = self.des_path + '\\' + i 
 
             if not os.path.isfile(file_path):
-                return
+                continue
 
             self.move_file(file_path, ocx_path_file)
             self.move_file(file_path, des_path_file)
@@ -60,8 +62,8 @@ class RebuildClass(object):
             logging.error(e)
 
     def rebuild(self, sys_name):
-        path = 'rebuild' if sys_name not in LONG_PATH else 'rebuild_long'
 
+        path,_ = self.get_path(sys_name)
         cmd_rebuild_command = COMMAND[path].format(self.current_path,sys_name)
         print(cmd_rebuild_command)
         os.system(cmd_rebuild_command)
