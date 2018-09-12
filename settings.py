@@ -93,3 +93,4 @@ SYS_NAME = {
     '11': 'ThunderDeposit',
     '12': 'ThunderSupermarket'
 }
+B
